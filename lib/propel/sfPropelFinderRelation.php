@@ -213,6 +213,7 @@ class sfPropelFinderRelation
     $peerClass = sfPropelFinderUtils::getPeerClassFromClass($this->getToClass());
     foreach(call_user_func(array($peerClass, 'getFieldNames'), BasePeer::TYPE_COLNAME) as $column)
     {
+    	
       if ($this->isAlias())
       {
         $column = call_user_func(array($peerClass, 'alias'), $this->getAlias(), $column);

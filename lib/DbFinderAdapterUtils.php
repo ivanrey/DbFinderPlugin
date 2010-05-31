@@ -4,7 +4,8 @@ class DbFinderAdapterUtils
 {
   const 
     DOCTRINE = "Doctrine",
-    PROPEL   = "Propel";
+    PROPEL   = "Propel",
+    PROPEL15 = "Propel15";
     
   /**
    * Possible DbFinder adapters
@@ -12,19 +13,28 @@ class DbFinderAdapterUtils
    */
   protected static function getPossibleAdapters()
   {
+  	
     return sfConfig::get('app_DbFinder_adapters', array(
-      self::PROPEL => array(
+      self::PROPEL15 => array(
+        'model_class'     => 'BaseObject',
+        'adapter_class'   => 'sfPropel15Finder',
+        'generator_class' => 'sfPropelAdminGenerator',
+        'column_class'    => 'sfPropelFinderColumn',
+      	'version'					=> array( 'constant'=>'Propel::VERSION', 'version'=> '1.5.0', 'operator'=>'>=')
+      ),self::PROPEL => array(
         'model_class'     => 'BaseObject',
         'adapter_class'   => 'sfPropelFinder',
         'generator_class' => 'sfPropelAdminGenerator',
-        'column_class'    => 'sfPropelFinderColumn'
+        'column_class'    => 'sfPropelFinderColumn',
+      	'version'					=> array( 'constant'=>'Propel::VERSION', 'version'=> '1.5.0', 'operator'=>'<')
       ),
       self::DOCTRINE => array(
         'model_class'     => 'Doctrine_Record',
         'adapter_class'   => 'sfDoctrineFinder',
         'generator_class' => 'sfDoctrineAdminGenerator',
         'column_class'    => 'sfDoctrineFinderColumn'
-      )
+      ),
+      
     ));
   }
   
@@ -49,7 +59,7 @@ class DbFinderAdapterUtils
       $baseObject = is_object($baseClass) ? $baseClass : new $baseClass;
       foreach(self::getPossibleAdapters() as $type => $adapterParams)
       {
-        if($baseObject instanceof $adapterParams['model_class'])
+        if($baseObject instanceof $adapterParams['model_class'] && (!isset($adapterParams['version']) || version_compare(constant($adapterParams['version']['constant']),$adapterParams['version']['version'],$adapterParams['version']['operator'])))
         {
           self::$adaptersParamsFor[$baseClassName] = array($adapterParams['adapter_class'], $type);
           $found = true;

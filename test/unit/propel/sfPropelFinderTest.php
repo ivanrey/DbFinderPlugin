@@ -34,17 +34,19 @@ The tests expect a model similar to this one:
 Beware that the tables for these models will be emptied by the tests, so use a test database connection.
 */
 
+
 include dirname(__FILE__).'/../../bootstrap.php';
+
+$sfPropelFinderClass =  DbFinderAdapterUtils::$adaptersParamsFor['Bar'][0];
+
 
 // cleanup database
 CommentPeer::doDeleteAll();
 ArticlePeer::doDeleteAll();
 
 $t = new lime_test(148, new lime_output_color());
-
 $t->diag('find()');
-
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $articles = $finder->find();
 $t->is($articles, array(), 'find() returns an empty array when no records match');
 
@@ -52,7 +54,7 @@ $article1 = new Article();
 $article1->setTitle('foo');
 $article1->save();
 
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $articles = $finder->find();
 $article = $articles[0];
 $t->is($article->getTitle(), 'foo', 'find() returns an array of record');
@@ -66,7 +68,7 @@ $article3 = new Article();
 $article3->setTitle('foo3');
 $article3->save();
 
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $articles = $finder->find();
 $t->is(count($articles), 3, 'find() with no argument returns an array of all the records');
 $article = array_shift($articles);
@@ -76,7 +78,7 @@ $t->is($article->getTitle(), 'foo2', 'find() with no argument returns an array o
 $article = array_shift($articles);
 $t->is($article->getTitle(), 'foo3', 'find() with no argument returns an array of all the records');
 
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $articles = $finder->find(2);
 $t->is(count($articles), 2, 'find() with an argument returns a limited array of records');
 
@@ -84,7 +86,7 @@ $t->diag('findOne()');
 
 ArticlePeer::doDeleteAll();
 
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $article = $finder->findOne();
 $t->is($article, null, 'findOne() returns null when no records match');
 
@@ -96,7 +98,7 @@ $article2 = new Article();
 $article2->setTitle('foo2');
 $article2->save();
 
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $article = $finder->findOne();
 $t->isa_ok($article, 'Article', 'findOne() returns a single object');
 $t->is($article->getTitle(), 'foo', 'findOne() returns the first object matching the conditions');
@@ -105,11 +107,11 @@ $t->diag('findLast() and findFirst()');
 
 ArticlePeer::doDeleteAll();
 
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $article = $finder->findFirst();
 $t->is($article, null, 'findFirst() returns null when no records match');
 
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $article = $finder->findLast();
 $t->is($article, null, 'findLast() returns null when no records match');
 
@@ -121,12 +123,12 @@ $article2 = new Article();
 $article2->setTitle('foo2');
 $article2->save();
 
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $article = $finder->findFirst();
 $t->isa_ok($article, 'Article', 'findFirst() returns a single object');
 $t->is($article->getTitle(), 'foo', 'findFirst() returns the last object matching the conditions');
 
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $article = $finder->findLast();
 $t->isa_ok($article, 'Article', 'findLast() returns a single object');
 $t->is($article->getTitle(), 'foo2', 'findLast() returns the last object matching the conditions');
@@ -189,21 +191,21 @@ $article3 = new Article();
 $article3->setTitle('foo3');
 $article3->save();
 
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $article = $finder->findPk($article2->getId());
 $t->is($article->getTitle(), 'foo2', 'findPk() returns the object with the primary key matching the argument');
 $t->ok(!is_array($article), 'findPk() returns a single object when passed a single primary key');
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $article = $finder->findPk(76543787654);
 $t->is($article, null, 'findPk() returns null if the primary key is not found');
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $articles = $finder->findPk(array($article2->getId(), $article1->getId()));
 $t->ok(is_array($articles), 'findPk() returns an array of objects when passed an array of primary keys');
 $t->is(count($articles), 2, 'findPk() returns the objects with the primary keys matching the arguments');
 
 $article = $finder->with('Category')->findPk($article2->getId());
+$t->diag($finder->getLatestQuery());
 $t->cmp_ok(strpos($finder->getLatestQuery(), 'SELECT article.ID, article.TITLE, article.CATEGORY_ID, category.ID, category.NAME FROM article INNER JOIN category'), '===', 0, 'findPk() is compatible with with()');
-
 ArticlePeer::doDeleteAll();
 
 $article1 = new Article();
@@ -240,13 +242,13 @@ $article3 = new Article();
 $article3->setTitle('foo3');
 $article3->save();
 
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $t->is($finder->getClass(), 'Article', 'Class can be set during instanciation, in which case the finder is automatically initialized');
 $article = $finder->findOne();
 $t->isa_ok($article, 'Article', 'A finder instanciated directly with a class returns the correct objects');
 $t->is($article->getTitle(), 'foo', 'A finder instanciated directly with a class returns the correct objects');
 
-$finder = new sfPropelFinder();
+$finder = new $sfPropelFinderClass();
 $finder->setClass('Article');
 $t->is($finder->getClass(), 'Article', 'setClass() and getClass() are accesors to the protected $class property');
 $article = $finder->findOne();
@@ -303,7 +305,7 @@ $t->is(count($articles), 1, 'A finder initialized from an array accepts further 
 $t->diag('count()');
 
 ArticlePeer::doDeleteAll();
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $nbArticles = $finder->count();
 $t->isa_ok($nbArticles, 'integer', 'count() returns an integer');
 $t->is($nbArticles, 0, 'count() returns 0 on empty tables');
@@ -327,7 +329,7 @@ $article2->save();
 $article3 = new Article();
 $article3->setTitle('foo3');
 $article3->save();
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $nbArticles = $finder->count();
 $t->is($nbArticles, 2, 'delete() deletes records from the table and returns the number of deleted rows');
 $nbDeleted = $finder->delete();
@@ -340,7 +342,7 @@ $article2->save();
 $article3 = new Article();
 $article3->setTitle('foo3');
 $article3->save();
-$finder = new sfPropelFinder('Article');
+$finder = new $sfPropelFinderClass('Article');
 $nbDeleted = $finder->where('Title', 'foo2')->delete();
 $t->is($nbDeleted, 1, 'delete() deletes all rows found by a finder');
 $nbArticles = $finder->count();
@@ -560,7 +562,7 @@ $finder = sfPropelFinder::from('Article')->
 $finder->find();
 $t->is(
   $finder->getLatestQuery(),
-  $baseSelect . "upper(article.TITLE) = 'foo'''",
+  $baseSelect . "upper(article.TITLE) = 'foo\''",
   'whereCustom() properly escapes values'
 );
 

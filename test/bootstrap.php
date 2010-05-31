@@ -2,7 +2,7 @@
 
 // Autofind the first available app environment
 $sf_root_dir = realpath(dirname(__FILE__).'/../../../');
-$apps_dir = glob($sf_root_dir.'/apps/*', GLOB_ONLYDIR);
+$apps_dir = glob($sf_root_dir.DIRECTORY_SEPARATOR.'apps'.DIRECTORY_SEPARATOR.'*', GLOB_ONLYDIR);
 $app = substr($apps_dir[0], 
               strrpos($apps_dir[0], DIRECTORY_SEPARATOR) + 1, 
               strlen($apps_dir[0]));
@@ -34,18 +34,28 @@ else
   $databaseManager->initialize();
 }
 
-define('PROPEL_VERSION', method_exists('Criteria', 'setPrimaryTableName') ? '1.3' : '1.2');
+if(class_exists('Propel'))
+{
+	define('PROPEL_VERSION', substr(Propel::VERSION,0,3)); //This works up to version 1.9 of Propel, but I think there won't be any 1.6 version
+	
+	//Define the PropelFinder
+	class Bar extends BaseObject{}
+	$params = DbFinderAdapterUtils::getParams('Bar');
+	
+}
+	
 function propel_sql($sql)
 {
-  $regs = array('/\[P12(.+?)\]/', '/\[P13(.+?)\]/');
-  if(PROPEL_VERSION == '1.2')
+  $regs = array('1.2'=>'/\[P12(.+?)\]/','1.3'=>'/\[P13(.+?)\]/','1.4'=>'/\[P14(.+?)\]/','1.5'=>'/\[P15(.+?)\]/');
+
+  $replacements = array();
+  foreach($regs as $reg)
   {
-    return preg_replace($regs, array('$1', ''), $sql);
+  	$replacements[] = PROPEL_VERSION==$reg?'$1':'';
   }
-  else
-  {
-    return preg_replace($regs, array('', '$1'), $sql);
-  }
+
+  return preg_replace($regs, $replacements, $sql);
+  
 }
 
 function doctrine_sql($sql)

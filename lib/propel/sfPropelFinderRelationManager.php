@@ -9,15 +9,30 @@ class sfPropelFinderRelationManager implements ArrayAccess
     $startClass,
     $startPeerClass,
     $databaseMap,
-    $relations = array();
+    $relations = array(),
+    $propelVersion14OrMore;
   
   public function __construct($startClass)
   {
     $this->startClass = $startClass;
     $this->startPeerClass = sfPropelFinderUtils::getPeerClassFromClass($startClass);
-    $mapBuilder = call_user_func(array($this->startPeerClass, 'getMapBuilder'));
-    $mapBuilder->doBuild();
-    $this->databaseMap = $mapBuilder->getDatabaseMap();
+    if(method_exists($this->startPeerClass,'getMapBuilder'))
+    {
+    	$propelVersion14OrMore = false;
+    	$mapBuilder = call_user_func(array($this->startPeerClass, 'getMapBuilder'));
+    	$mapBuilder->doBuild();
+    	$this->databaseMap = $mapBuilder->getDatabaseMap();
+    }
+    else
+    {
+    	$this->propelVersion14OrMore = true;
+    	call_user_func(array($this->startPeerClass, 'buildTableMap'));
+    	$mapBuilder = call_user_func(array($this->startPeerClass, 'getTableMap'));
+    	$this->databaseMap = $mapBuilder->getDatabaseMap();
+    }
+    
+    
+    
   }
   
   public function getRelations()
@@ -175,8 +190,16 @@ class sfPropelFinderRelationManager implements ArrayAccess
       {
         if(!$this->databaseMap->containsTable($c->getRelatedTableName()))
         {
-          $mapBuilder = call_user_func(array($toPeer, 'getMapBuilder'));
-          $mapBuilder->doBuild();
+        	if($this->propelVersion14OrMore)
+        	{
+        		call_user_func(array($toPeer, 'buildTableMap'));
+        	}
+        	else
+        	{
+        		$mapBuilder = call_user_func(array($toPeer, 'getMapBuilder'));
+          	$mapBuilder->doBuild();	
+        	}
+          
         }
         try
         {
